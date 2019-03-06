@@ -1,3 +1,5 @@
+pub mod tp;
+
 #[cfg(test)]
 mod tests {
     #[test]
