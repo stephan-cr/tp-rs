@@ -35,8 +35,8 @@ impl<T: TimeSource> Throughput<T> {
 
     pub fn throughput(&mut self) -> Option<f64> {
         let elapsed: Duration = self.initial_time.elapsed();
-        let denominator = f64::from(elapsed.as_secs() as u32)
-            + (f64::from(elapsed.subsec_millis()) / 1000.0);
+        let denominator =
+            f64::from(elapsed.as_secs() as u32) + f64::from(elapsed.subsec_millis()) / 1000.0;
         let tp = if denominator == 0.0 {
             None
         } else {
