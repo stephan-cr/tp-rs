@@ -50,6 +50,12 @@ impl<T: TimeSource> Throughput<T> {
     }
 }
 
+impl<T: TimeSource> Default for Throughput<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Mutex};
