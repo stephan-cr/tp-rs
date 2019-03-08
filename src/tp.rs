@@ -1,3 +1,4 @@
+use std::option::Option;
 use std::time::{Duration, Instant};
 
 pub trait TimeSource {
@@ -32,10 +33,16 @@ impl<T: TimeSource> Throughput<T> {
         self.sum += value;
     }
 
-    pub fn throughput(&mut self) -> f64 {
+    pub fn throughput(&mut self) -> Option<f64> {
         let elapsed: Duration = self.initial_time.elapsed();
-        let tp = f64::from(self.sum) / f64::from(elapsed.as_secs() as u32)
+        let denominator = f64::from(elapsed.as_secs() as u32)
             + (f64::from(elapsed.subsec_millis()) / 1000.0);
+        let tp = if denominator == 0.0 {
+            None
+        } else {
+            Some(f64::from(self.sum) / denominator)
+        };
+
         self.initial_time = T::now();
         self.sum = 0;
 
@@ -61,6 +68,18 @@ mod tests {
         }
     }
 
+    struct ZeroTimeFakeInstant {}
+
+    impl super::TimeSource for ZeroTimeFakeInstant {
+        fn now() -> Self {
+            ZeroTimeFakeInstant {}
+        }
+
+        fn elapsed(&self) -> Duration {
+            Duration::new(0, 0)
+        }
+    }
+
     #[test]
     fn test_basic() {
         let mut tp: super::Throughput<Instant> = super::Throughput::new();
@@ -74,6 +93,18 @@ mod tests {
         tp.report(1);
 
         tp.throughput();
+    }
+
+    #[test]
+    fn test_zero_time() {
+        let mut tp: super::Throughput<ZeroTimeFakeInstant> = super::Throughput::new();
+
+        assert_eq!(None, tp.throughput());
+
+        tp.report(1);
+
+        assert_eq!(Duration::default(), Duration::new(0, 0));
+        assert_eq!(None, tp.throughput());
     }
 
     #[test]
