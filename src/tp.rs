@@ -37,6 +37,7 @@ impl<T: TimeSource> Throughput<T> {
         let tp = f64::from(self.sum) / f64::from(elapsed.as_secs() as u32)
             + (f64::from(elapsed.subsec_millis()) / 1000.0);
         self.initial_time = T::now();
+        self.sum = 0;
 
         tp
     }
@@ -44,6 +45,8 @@ impl<T: TimeSource> Throughput<T> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+    use std::thread;
     use std::time::{Duration, Instant};
 
     struct FakeInstant {}
@@ -71,5 +74,23 @@ mod tests {
         tp.report(1);
 
         tp.throughput();
+    }
+
+    #[test]
+    fn test_in_threads() {
+        let tp: Arc<Mutex<super::Throughput<Instant>>> =
+            Arc::new(Mutex::new(super::Throughput::new()));
+        let tp1 = tp.clone();
+        let t1 = thread::spawn(move || -> () {
+            tp1.lock().unwrap().report(1);
+        });
+
+        let tp2 = tp.clone();
+        let t2 = thread::spawn(move || -> () {
+            tp2.lock().unwrap().throughput();
+        });
+
+        let _ = t1.join();
+        let _ = t2.join();
     }
 }
