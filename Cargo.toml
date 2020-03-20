@@ -5,3 +5,4 @@ authors = ["stephan"]
 edition = "2018"
 
 [dependencies]
+tokio = { version = "0.2.13", features = ["time"] }

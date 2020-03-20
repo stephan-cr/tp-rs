@@ -62,6 +62,9 @@ mod tests {
     use std::thread;
     use std::time::{Duration, Instant};
 
+    use tokio::time::delay_until;
+    use tokio::runtime::Runtime;
+
     struct FakeInstant {}
 
     impl super::TimeSource for FakeInstant {
@@ -129,5 +132,14 @@ mod tests {
 
         let _ = t1.join();
         let _ = t2.join();
+    }
+
+    #[test]
+    fn test_delay() {
+        let mut rt = Runtime::new().unwrap();
+
+        rt.block_on(async {
+            delay_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
+        });
     }
 }
