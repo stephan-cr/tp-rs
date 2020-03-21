@@ -1,4 +1,5 @@
 use std::option::Option;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 pub trait TimeSource {
@@ -56,14 +57,40 @@ impl<T: TimeSource> Default for Throughput<T> {
     }
 }
 
+pub struct ThroughputSynchronized<T: TimeSource> {
+    tp_unsynchronized: Mutex<Throughput<T>>,
+}
+
+impl<T: TimeSource> ThroughputSynchronized<T> {
+    pub fn new() -> Self {
+        ThroughputSynchronized {
+            tp_unsynchronized: Mutex::new(Throughput::new()),
+        }
+    }
+
+    pub fn report(&self, value: u32) {
+        self.tp_unsynchronized.lock().unwrap().report(value);
+    }
+
+    pub fn throughput(&self) -> Option<f64> {
+        self.tp_unsynchronized.lock().unwrap().throughput()
+    }
+}
+
+impl<T: TimeSource> Default for ThroughputSynchronized<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Mutex};
     use std::thread;
     use std::time::{Duration, Instant};
 
-    use tokio::time::delay_until;
     use tokio::runtime::Runtime;
+    use tokio::time::{delay_for, delay_until};
 
     struct FakeInstant {}
 
@@ -135,10 +162,30 @@ mod tests {
     }
 
     #[test]
+    fn test_tp_synchronized_in_threads() {
+        let tp: Arc<super::ThroughputSynchronized<Instant>> =
+            Arc::new(super::ThroughputSynchronized::new());
+
+        let tp1 = tp.clone();
+        let t1 = thread::spawn(move || -> () {
+            tp1.report(1);
+        });
+
+        let tp2 = tp.clone();
+        let t2 = thread::spawn(move || -> () {
+            tp2.throughput();
+        });
+
+        let _ = t1.join();
+        let _ = t2.join();
+    }
+
+    #[test]
     fn test_delay() {
         let mut rt = Runtime::new().unwrap();
 
         rt.block_on(async {
+            delay_for(tokio::time::Duration::from_millis(10)).await;
             delay_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
         });
     }
