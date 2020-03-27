@@ -24,7 +24,7 @@ pub struct Throughput<T: TimeSource> {
 
 impl<T: TimeSource> Throughput<T> {
     pub fn new() -> Self {
-        Throughput {
+        Self {
             sum: 0,
             initial_time: T::now(),
         }
@@ -63,7 +63,7 @@ pub struct ThroughputSynchronized<T: TimeSource> {
 
 impl<T: TimeSource> ThroughputSynchronized<T> {
     pub fn new() -> Self {
-        ThroughputSynchronized {
+        Self {
             tp_unsynchronized: Mutex::new(Throughput::new()),
         }
     }
@@ -85,7 +85,7 @@ impl<T: TimeSource> Default for ThroughputSynchronized<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
+    use std::sync::{Arc, Barrier, Mutex};
     use std::thread;
     use std::time::{Duration, Instant};
 
@@ -128,7 +128,7 @@ mod tests {
         tp.report(1);
         tp.report(1);
 
-        tp.throughput();
+        assert_eq!(tp.throughput(), Some(0.2));
     }
 
     #[test]
@@ -163,17 +163,22 @@ mod tests {
 
     #[test]
     fn test_tp_synchronized_in_threads() {
-        let tp: Arc<super::ThroughputSynchronized<Instant>> =
+        let tp: Arc<super::ThroughputSynchronized<FakeInstant>> =
             Arc::new(super::ThroughputSynchronized::new());
+        let barrier = Arc::new(Barrier::new(2));
 
         let tp1 = tp.clone();
+        let b1 = barrier.clone();
         let t1 = thread::spawn(move || -> () {
             tp1.report(1);
+            b1.wait();
         });
 
         let tp2 = tp.clone();
+        let b2 = barrier.clone();
         let t2 = thread::spawn(move || -> () {
-            tp2.throughput();
+            b2.wait();
+            assert_eq!(tp2.throughput(), Some(0.1));
         });
 
         let _ = t1.join();
