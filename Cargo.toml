@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["stephan"]
 edition = "2018"
 
-[dependencies]
+[dev-dependencies]
 tokio = { version = "0.2.13", features = ["time"] }
