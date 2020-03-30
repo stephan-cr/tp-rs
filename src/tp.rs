@@ -85,6 +85,9 @@ impl<T: TimeSource> Default for ThroughputSynchronized<T> {
 
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
+
+    use std::option::Option;
     use std::sync::{Arc, Barrier, Mutex};
     use std::thread;
     use std::time::{Duration, Instant};
@@ -128,7 +131,7 @@ mod tests {
         tp.report(1);
         tp.report(1);
 
-        assert_eq!(tp.throughput(), Some(0.2));
+        assert_approx_eq!(tp.throughput().unwrap(), 0.2);
     }
 
     #[test]
@@ -147,15 +150,20 @@ mod tests {
     fn test_in_threads() {
         let tp: Arc<Mutex<super::Throughput<Instant>>> =
             Arc::new(Mutex::new(super::Throughput::new()));
-        let tp1 = tp.clone();
-        let t1 = thread::spawn(move || -> () {
-            tp1.lock().unwrap().report(1);
-        });
 
-        let tp2 = tp.clone();
-        let t2 = thread::spawn(move || -> () {
-            tp2.lock().unwrap().throughput();
-        });
+        let t1 = {
+            let tp1 = tp.clone();
+            thread::spawn(move || -> () {
+                tp1.lock().unwrap().report(1);
+            })
+        };
+
+        let t2 = {
+            let tp2 = tp.clone();
+            thread::spawn(move || -> () {
+                tp2.lock().unwrap().throughput();
+            })
+        };
 
         let _ = t1.join();
         let _ = t2.join();
@@ -167,22 +175,26 @@ mod tests {
             Arc::new(super::ThroughputSynchronized::new());
         let barrier = Arc::new(Barrier::new(2));
 
-        let tp1 = tp.clone();
-        let b1 = barrier.clone();
-        let t1 = thread::spawn(move || -> () {
-            tp1.report(1);
-            b1.wait();
-        });
+        let t1 = {
+            let tp = tp.clone();
+            let barrier = barrier.clone();
+            thread::spawn(move || -> () {
+                tp.report(1);
+                barrier.wait();
+            })
+        };
 
-        let tp2 = tp.clone();
-        let b2 = barrier.clone();
-        let t2 = thread::spawn(move || -> () {
-            b2.wait();
-            assert_eq!(tp2.throughput(), Some(0.1));
-        });
+        let t2 = {
+            let tp = tp.clone();
+            let barrier = barrier.clone();
+            thread::spawn(move || -> Option<f64> {
+                barrier.wait();
+                tp.throughput()
+            })
+        };
 
         let _ = t1.join();
-        let _ = t2.join();
+        assert_approx_eq!(t2.join().unwrap().unwrap(), 0.1);
     }
 
     #[test]
