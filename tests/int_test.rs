@@ -1,6 +1,6 @@
 // Integration tests
 
-use tp::tp::{Throughput, ThroughputSynchronized};
+use tp::{Throughput, ThroughputSynchronized};
 
 use std::sync::Arc;
 use std::time::Instant;
