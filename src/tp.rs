@@ -34,6 +34,11 @@ impl<T: TimeSource> Throughput<T> {
         self.sum += value;
     }
 
+    pub fn reset(&mut self) {
+        self.initial_time = T::now();
+        self.sum = 0;
+    }
+
     pub fn throughput(&mut self) -> Option<f64> {
         let elapsed: Duration = self.initial_time.elapsed();
         let denominator =
@@ -44,8 +49,7 @@ impl<T: TimeSource> Throughput<T> {
             Some(f64::from(self.sum) / denominator)
         };
 
-        self.initial_time = T::now();
-        self.sum = 0;
+        self.reset();
 
         tp
     }
@@ -70,6 +74,10 @@ impl<T: TimeSource> ThroughputSynchronized<T> {
 
     pub fn report(&self, value: u32) {
         self.tp_unsynchronized.lock().unwrap().report(value);
+    }
+
+    pub fn reset(&self) {
+        self.tp_unsynchronized.lock().unwrap().reset();
     }
 
     pub fn throughput(&self) -> Option<f64> {
