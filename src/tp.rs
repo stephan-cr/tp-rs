@@ -91,6 +91,41 @@ impl<T: TimeSource> Default for ThroughputSynchronized<T> {
     }
 }
 
+#[cfg(feature = "async")]
+pub mod tokio_async {
+    use tokio::sync::Mutex;
+
+    pub struct ThroughputAsyncSynchronized<T: super::TimeSource> {
+        tp_unsynchronized: Mutex<super::Throughput<T>>,
+    }
+
+    impl<T: super::TimeSource> ThroughputAsyncSynchronized<T> {
+        pub fn new() -> Self {
+            Self {
+                tp_unsynchronized: Mutex::new(super::Throughput::new()),
+            }
+        }
+
+        pub async fn report(&self, value: u32) {
+            self.tp_unsynchronized.lock().await.report(value);
+        }
+
+        pub async fn reset(&self) {
+            self.tp_unsynchronized.lock().await.reset();
+        }
+
+        pub async fn throughput(&self) -> Option<f64> {
+            self.tp_unsynchronized.lock().await.throughput()
+        }
+    }
+
+    impl<T: super::TimeSource> Default for ThroughputAsyncSynchronized<T> {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
@@ -213,5 +248,22 @@ mod tests {
             delay_for(tokio::time::Duration::from_millis(10)).await;
             delay_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
         });
+    }
+
+    #[tokio::test]
+    async fn test_async_delay() {
+        delay_for(tokio::time::Duration::from_millis(10)).await;
+        delay_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
+    }
+
+    #[cfg(feature = "async")]
+    #[tokio::test]
+    async fn test_async_tp() {
+        let tp: super::tokio_async::ThroughputAsyncSynchronized<FakeInstant> =
+            super::tokio_async::ThroughputAsyncSynchronized::new();
+        tp.report(1).await;
+        tp.report(1).await;
+
+        assert_approx_eq!(tp.throughput().await.unwrap(), 0.2);
     }
 }

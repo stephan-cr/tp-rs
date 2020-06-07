@@ -5,6 +5,14 @@ authors = ["stephan"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
 
+[features]
+default = []
+
+async = ["tokio"]
+
+[dependencies]
+tokio = { version = "0.2.21", optional = true, features = ["sync"] }
+
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
-tokio = { version = "0.2.13", features = ["time"] }
+tokio = { version = "0.2.21", features = ["macros", "rt-threaded", "time"] }
