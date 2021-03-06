@@ -136,7 +136,7 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use tokio::runtime::Runtime;
-    use tokio::time::{delay_for, delay_until};
+    use tokio::time::{sleep, sleep_until};
 
     struct FakeInstant {}
 
@@ -196,14 +196,14 @@ mod tests {
 
         let t1 = {
             let tp1 = tp.clone();
-            thread::spawn(move || -> () {
+            thread::spawn(move || {
                 tp1.lock().unwrap().report(1);
             })
         };
 
         let t2 = {
             let tp2 = tp.clone();
-            thread::spawn(move || -> () {
+            thread::spawn(move || {
                 tp2.lock().unwrap().throughput();
             })
         };
@@ -221,7 +221,7 @@ mod tests {
         let t1 = {
             let tp = tp.clone();
             let barrier = barrier.clone();
-            thread::spawn(move || -> () {
+            thread::spawn(move || {
                 tp.report(1);
                 barrier.wait();
             })
@@ -242,18 +242,18 @@ mod tests {
 
     #[test]
     fn test_delay() {
-        let mut rt = Runtime::new().unwrap();
+        let rt = Runtime::new().unwrap();
 
         rt.block_on(async {
-            delay_for(tokio::time::Duration::from_millis(10)).await;
-            delay_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
+            sleep(tokio::time::Duration::from_millis(10)).await;
+            sleep_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
         });
     }
 
     #[tokio::test]
     async fn test_async_delay() {
-        delay_for(tokio::time::Duration::from_millis(10)).await;
-        delay_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
+        sleep(tokio::time::Duration::from_millis(10)).await;
+        sleep_until(tokio::time::Instant::now() + tokio::time::Duration::from_millis(10)).await;
     }
 
     #[cfg(feature = "async")]

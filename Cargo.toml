@@ -11,8 +11,8 @@ default = []
 async = ["tokio"]
 
 [dependencies]
-tokio = { version = "0.2.21", optional = true, features = ["sync"] }
+tokio = { version = "1", optional = true, features = ["sync"] }
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
-tokio = { version = "0.2.21", features = ["macros", "rt-threaded", "time"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
