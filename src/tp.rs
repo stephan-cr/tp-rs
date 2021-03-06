@@ -202,7 +202,7 @@ mod tests {
         };
 
         let t2 = {
-            let tp2 = tp.clone();
+            let tp2 = tp;
             thread::spawn(move || {
                 tp2.lock().unwrap().throughput();
             })
@@ -228,8 +228,8 @@ mod tests {
         };
 
         let t2 = {
-            let tp = tp.clone();
-            let barrier = barrier.clone();
+            let tp = tp;
+            let barrier = barrier;
             thread::spawn(move || -> Option<f64> {
                 barrier.wait();
                 tp.throughput()
