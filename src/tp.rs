@@ -17,6 +17,8 @@ impl TimeSource for Instant {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Throughput<T: TimeSource> {
     initial_time: T,
     sum: u32,
@@ -61,6 +63,7 @@ impl<T: TimeSource> Default for Throughput<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct ThroughputSynchronized<T: TimeSource> {
     tp_unsynchronized: Mutex<Throughput<T>>,
 }
@@ -95,6 +98,7 @@ impl<T: TimeSource> Default for ThroughputSynchronized<T> {
 pub mod tokio_async {
     use tokio::sync::Mutex;
 
+    #[derive(Debug)]
     pub struct ThroughputAsyncSynchronized<T: super::TimeSource> {
         tp_unsynchronized: Mutex<super::Throughput<T>>,
     }
