@@ -24,4 +24,4 @@ jobs:
     - uses: giraffate/clippy-action@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-features
+        clippy_flags: --all-features
